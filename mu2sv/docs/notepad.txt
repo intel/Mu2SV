@@ -1,0 +1,99 @@
+- NOT token is changed to literal '!'
+- all non-original murphi features (real, pctl, etc.) removed
+- all intel added features removed
+- all specific end reserved words removed
+- old end types error catching skipped
+- corrected bEGIN token to BEGIN
+- other tokens/reserved words removed:
+  program, process, in, oldend, interleaved, traceuntil
+- ignoring formfeed character removed
+
+- 'boolean', 'true', and 'false' are treated as regular IDs.
+  the compiler implicitly declares them at the start of the
+  verilog file, so they cannot be reused as an ID for other purposes.
+- The 3 are not declared as keywords in the lexer.
+
+- changed comment detection from /* or -- starting an exclusive state
+  to a single rule, far more concise, but unclear if functionality
+  is identical
+
+* because there's no golden reference for mrn, and we expect to find more
+unintentional bugs in mrn, it's impossible to know 100% correctness.
+
+
+filling env:
+if attribute node is a scope pusher:
+  recusively call on attr
+elif attribute declares something:
+  add directly to symbol table
+if attr contains a type expr:
+  visit type expr and create new scope if its record or add enums if its an enum
+
+scope pushers:
+    procdecl
+    funcdecl
+    forall
+    exists
+    forstmt
+    aliasstmt
+    simplerule
+    startstate
+    aliasrule
+    ruleset
+    recordtype
+
+symtab declares:
+    constdecl
+    typedecl
+    enum
+    vardecl
+    formal
+    quantifier
+    alias
+
+Recursively pretty prints the AST following 2 steps:
+1) Print NameOfClass(, then each attribute starts on a new line and
+is indented in 2 spaces, elements of an array are treated the same way.
+2) Then try to flatten the resulting string by removing all space
+characters, if the resulting string has less than 128 characters we
+return the flat string instead.
+
+The amount of string copying done is very inefficent, but it still runs
+almost instantly for large ASTs.
+
+The resulting string acts as valid python code for declaring an
+instance of the class.
+
+murphi bug:
+    an error occurs if we declare some alias a: f(x) where f(x) returns a non-simple type
+    if an expression is an lvalue, it can be referenced even if its undefined
+
+issue:
+    checking for deadlock state
+    keep track ast line number
+    error reporting (copy murphi)
+    find a work around for put (print) statements
+
+
+def gen_RuleSet(self, node):
+    def rename_quantifiers(node, oldname, newname):
+        for child in node.__dict__.values():
+            if isinstance(child, IDDes) and child.id == oldname:
+                child.id = newname
+            elif isinstance(child, MuAST):
+                rename_quantifiers(child, oldname, newname)
+            elif isinstance(child, list):
+                for c in child:
+                    rename_quantifiers(c, oldname, newname)
+    for quantifier in node.quantifiers:
+        i = 0
+        qid = f'_{quantifier.id}_{i}'
+        while qid in self.global_env():
+            i += 1
+            qid = f'_{quantifier.id}_{i}'
+        self.global_env()[qid] = quantifier
+        self.local_env[qid] = quantifier
+        self.local_env.pop(quantifier.id)
+        rename_quantifiers(node, quantifier.id, qid)
+    for rule in node.rules:
+        self.codegen(rule)

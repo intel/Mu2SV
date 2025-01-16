@@ -1,0 +1,492 @@
+prog:
+    decls procDecls rules pctl
+
+decls:
+    decls decl
+  | /* empty */
+
+decl:
+    CONST constDecls
+  | TYPE typeDecls
+  | VAR varDecls
+
+constDecls:
+    constDecls constDecl semi
+  | /* empty */
+
+semi:
+    ';'
+
+constDecl:
+    ID ':' expr
+
+typeDecls:
+    typeDecls typeDecl semi
+  | /* empty */
+
+typeDecl:
+    ID ':' typeExpr
+
+typeExpr:
+    typeid
+  | realtype
+  | enumtype
+  | subrangetype
+  | recordtype
+  | arraytype
+  | scalarsettype
+  | uniontype
+  | multisettype
+
+typeid:
+    ID
+
+realtype:
+    REAL '(' expr ',' expr ')'
+
+enumtype:
+    ENUM '{' enums '}'
+
+enums:
+    enums ',' ID
+  | enums ID
+  | ID
+
+subrangetype:
+    expr DOTDOT expr
+
+recordtype:
+    RECORD optInterleaved fields endrecord
+
+endrecord:
+    ENDRECORD
+  | END
+
+optInterleaved:
+
+fields:
+    fields semi field
+  | fields semi
+  | field
+
+field:
+    ID fieldtail
+
+fieldtail:
+    ',' ID fieldtail
+  | ':' typeExpr
+
+arraytype:
+    ARRAY optInterleaved '[' typeExpr ']' OF typeExpr
+
+multisettype:
+    MULTISET optInterleaved '[' expr ']' OF typeExpr
+
+scalarsettype:
+    SCALARSET '(' expr ')'
+
+uniontype:
+    UNION '{' unionlist '}'
+
+unionlist:
+    unionlist ',' unionlistelt
+  | unionlistelt ',' unionlistelt
+
+unionlistelt:
+    ID
+  | scalarsettype
+  | enumtype
+
+varDecls:
+    varDecls varDecl semi
+  | /* empty */
+
+varDecl:
+    ID vardecltail
+
+vardecltail:
+    ',' ID vardecltail
+  | ':' typeExpr
+
+procDecls:
+    procDecls procDecl
+  | procDecls funcDecl
+  | procDecls externFunDecl
+  | procDecls externProcDecl
+  | /* empty */
+
+externFunDecl:
+    EXTERNFUN ID '(' optformals ')'
+    ':' typeExpr optString semi
+
+externProcDecl:
+    EXTERNPROC ID '(' optformals ')'
+    optString semi
+
+procDecl:
+    PROCEDURE ID '(' optformals ')' semi
+    optdecls optstmts endprocedure semi
+
+endprocedure:
+    ENDPROCEDURE
+  | END
+
+funcDecl:
+    FUNCTION ID '(' optformals ')' ':' typeExpr semi
+    optdecls optstmts endfunction semi
+
+endfunction:
+    ENDFUNCTION
+  | END
+
+optformals:
+    formals
+  | /* empty */
+
+formals:
+    formals semi formal
+  | formals semi
+  | formal
+  | formals ',' formal
+
+formal:
+    VAR formalrest
+  | formalrest
+
+formalrest:
+    ID formaltail
+
+formaltail:
+    ',' ID formaltail
+  | ':' typeExpr
+
+optdecls:
+    decls bEGIN
+  | /* empty */
+
+designator:
+    ID
+  | designator '[' expr ']'
+  | designator '.' ID
+
+pctl:
+    PCTL pctlformula semi
+  | /* empty */
+
+pctlformula:
+    pctlformula PCTLAND pctlformula
+  | pctlformula PCTLOR pctlformula
+  | pctlformula PCTLIMPLIES pctlformula
+  | PCTLNOT pctlformula
+  | '(' pctlformula ')'
+  | pctlU
+  | pctlX
+  | expr
+
+pctlU:
+    '[' pctlformula UNTIL LEQ expr pctlformula ']' '<' expr
+  | '[' pctlformula UNTIL LEQ expr pctlformula ']' LEQ expr
+  | '[' pctlformula UNTIL LEQ expr pctlformula ']' '>' expr
+  | '[' pctlformula UNTIL LEQ expr pctlformula ']' GEQ expr
+
+pctlX:
+    '[' NEXT pctlformula ']' '<' expr
+  | '[' NEXT pctlformula ']' LEQ expr
+  | '[' NEXT pctlformula ']' '>' expr
+  | '[' NEXT pctlformula ']' GEQ expr
+
+expr:
+    expr '?' expr ':' expr
+  | expr IMPLIES expr
+  | expr '|' expr
+  | expr '&' expr
+  | NOT expr
+  | expr '<' expr
+  | expr LEQ expr
+  | expr '>' expr
+  | expr GEQ expr
+  | expr '=' expr
+  | expr NEQ expr
+  | expr '+' expr
+  | expr '-' expr
+  | '+' expr %prec '*'
+  | '-' expr %prec '*'
+  | expr '*' expr
+  | expr '/' expr
+  | expr '%' expr
+  | INTCONST
+  | REALCONST
+  | LOG '(' expr ')'
+  | LOG10 '(' expr ')'
+  | EXP '(' expr ')'
+  | SIN '(' expr ')'
+  | COS '(' expr ')'
+  | TAN '(' expr ')'
+  | FABS '(' expr ')'
+  | FLOOR '(' expr ')'
+  | CEIL '(' expr ')'
+  | SQRT '(' expr ')'
+  | FMOD '(' expr ',' expr ')'
+  | POW '(' expr ',' expr ')'
+  | ASIN '(' expr ')'
+  | ACOS '(' expr ')'
+  | ATAN '(' expr ')'
+  | SINH '(' expr ')'
+  | COSH '(' expr ')'
+  | TANH '(' expr ')'
+  | designator
+  | ID actuals
+  | ISUNDEFINED '(' designator ')'
+  | ISMEMBER '(' designator ',' typeExpr ')'
+  | '(' expr ')'
+  | FORALL quantifiers do expr endforall
+  | EXISTS quantifiers do expr endexists
+  | error
+  | MULTISETCOUNT '(' ID ':' designator ',' expr ')'
+
+endforall:
+    ENDFORALL
+  | END
+
+endexists:
+    ENDEXISTS
+  | END
+
+actuals:
+    '(' exprlist ')'
+  | '(' ')'
+
+exprlist:
+    exprlist ',' expr
+  | expr
+  | exprlist ',' UNDEFINED
+  | UNDEFINED
+
+quantifier:
+    ID ':' typeExpr
+  | ID ASSIGN expr TO expr optBy
+
+quantifiers:
+    quantifier ';' quantifiers
+  | quantifier
+
+do:
+    DO
+  | ':'
+
+optBy:
+    BY expr
+  | /* empty */
+
+optstmts:
+    stmts
+  | /* empty */
+
+stmts:
+    stmts semi stmt
+  | stmts semi
+  | stmt
+
+stmt:
+    assignment
+  | ifstmt
+  | whilestmt
+  | switchstmt
+  | forstmt
+  | proccall
+  | clearstmt
+  | errorstmt
+  | assertstmt
+  | putstmt
+  | aliasstmt
+  | returnstmt
+  | undefinestmt
+  | multisetaddstmt
+  | multisetremovestmt
+
+assignment:
+    designator ASSIGN expr
+  | designator ASSIGN UNDEFINED
+
+ifstmt:
+    IF expr THEN
+    optstmts
+    optElses
+    endif
+
+endif:
+    ENDIF
+  | END
+
+optElses:
+    elsif optElses
+  | optElse
+
+elsif:
+    ELSIF expr THEN optstmts
+
+optElse:
+    ELSE optstmts
+  | /* empty */
+
+whilestmt:
+    WHILE expr do
+    optstmts endwhile
+
+endwhile:
+    ENDWHILE
+  | END
+
+switchstmt:
+    SWITCH expr optCases
+    optElse endswitch
+
+endswitch:
+    ENDSWITCH
+  | END
+
+optCases:
+    optCases case
+  | /* empty */
+
+case:
+    CASE exprlist ':' optstmts
+
+forstmt:
+    FOR quantifiers do
+    optstmts endfor
+
+endfor:
+    ENDFOR
+  | END
+
+proccall:
+    ID actuals
+
+clearstmt:
+    CLEAR designator
+
+undefinestmt:
+    UNDEFINE designator
+
+multisetaddstmt:
+    MULTISETADD '(' designator ',' designator ')'
+
+multisetremovestmt:
+    MULTISETREMOVEPRED '(' ID ':' designator ',' expr ')'
+  | MULTISETREMOVE '(' expr ',' designator ')'
+
+errorstmt:
+    ERROR STRING
+
+assertstmt:
+    ASSERT expr optString
+
+putstmt:
+    PUT expr
+  | PUT STRING
+
+aliasstmt:
+    ALIAS aliases do
+    optstmts endalias
+
+endalias:
+    ENDALIAS
+  | END
+
+aliases:
+    aliases semi alias
+  | aliases semi
+  | aliases ',' alias
+  | alias
+
+alias:
+    ID ':' expr
+
+returnstmt:
+    RETURN optretexpr
+
+optretexpr:
+    expr
+  | /* empty */
+
+rules:
+    rule semi rules
+  | rule semi
+  | rule
+
+rule:
+    simplerule
+  | aliasrule
+  | ruleset
+  | startstate
+  | invariant
+  | assume
+  | lighthouse
+  | cover
+  | error
+  | choose
+
+simplerule:
+    RULE optPriority optString optCondition
+    optdecls optstmts endrule
+
+endrule:
+    ENDRULE
+  | END
+
+optCondition:
+    expr LONGARROW
+  | /* empty */
+
+optString:
+    STRING
+  | /* empty */
+
+optPriority:
+    INTCONST
+  | /* empty */
+
+aliasrule:
+    ALIAS aliases do
+    rules endalias
+
+ruleset:
+    RULESET quantifiers do
+    rules endruleset
+
+endruleset:
+    ENDRULESET
+  | END
+
+choose:
+    CHOOSE ID ':' designator do
+    rules endchoose
+
+onerule:
+    rule semi
+  | rule
+
+endchoose:
+    ENDCHOOSE
+  | END
+
+startstate:
+    STARTSTATE optString optdecls
+    optstmts endstartstate
+
+endstartstate:
+    ENDSTARTSTATE
+  | END
+
+invariant:
+    INVARIANT optString expr
+
+assume:
+    ASSUME optString expr
+
+lighthouse:
+    LIGHTHOUSE optString expr
+
+cover:
+    COVER optString expr

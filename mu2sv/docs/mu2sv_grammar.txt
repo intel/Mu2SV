@@ -1,0 +1,289 @@
+prog:
+    decls procdecls rules
+
+decls:
+    decls decl
+  | empty
+
+decl:
+    CONST constdecls
+  | TYPE typedecls
+  | VAR vardecls
+
+constdecls:
+    constdecls constdecl ';'
+  | empty
+
+constdecl:
+    ID ':' expr
+
+typedecls:
+    typedecls typedecl ';'
+  | empty
+
+typedecl:
+    ID ':' typeexpr
+
+typeexpr:
+    typeid
+  | enumtype
+  | subrangetype
+  | recordtype
+  | arraytype
+
+typeid:
+    ID
+
+enumtype:
+    ENUM '{' enums '}'
+
+enums:
+    enums ',' ID
+  | ID
+
+subrangetype:
+    expr DOTDOT expr
+
+recordtype:
+    RECORD fields END
+
+fields:
+    fields ';' field
+  | fields ';'
+  | field
+
+field:
+    ID fieldtail
+
+fieldtail:
+    ',' ID fieldtail
+  | ':' typeexpr
+
+arraytype:
+    ARRAY '[' typeexpr ']' OF typeexpr
+
+vardecls:
+    vardecls vardecl ';'
+  | empty
+
+vardecl:
+    ID vardecltail
+
+vardecltail:
+    ',' ID vardecltail
+  | ':' typeexpr
+
+procdecls:
+    procdecls procdecl
+  | procdecls funcdecl
+  | empty
+
+procdecl:
+    PROCEDURE ID '(' optformals ')' ';'
+    optdecls optstmts END ';'
+
+funcdecl:
+    FUNCTION ID '(' optformals ')' ':' typeexpr ';'
+    optdecls optstmts END ';'
+
+optformals:
+    formals
+  | empty
+
+formals:
+    formals ';' formal
+  | formals ';'
+  | formal
+
+formal:
+    VAR formalrest
+  | formalrest
+
+formalrest:
+    ID formaltail
+
+formaltail:
+    ',' ID formaltail
+  | ':' typeexpr
+
+optdecls:
+    decls BEGIN
+  | empty
+
+designator:
+    ID
+  | designator '[' expr ']'
+  | designator '.' ID
+
+expr:
+    expr '?' expr ':' expr
+  | expr IMPLIES expr
+  | expr '|' expr
+  | expr '&' expr
+  | expr '<' expr
+  | expr LEQ expr
+  | expr '>' expr
+  | expr GEQ expr
+  | expr '=' expr
+  | expr NEQ expr
+  | expr '+' expr
+  | expr '-' expr
+  | expr '*' expr
+  | expr '/' expr
+  | expr '%' expr
+  | '!' expr
+  | '+' expr %prec '*'
+  | '-' expr %prec '*'
+  | INTCONST
+  | designator
+  | ID actuals
+  | ISUNDEFINED '(' designator ')'
+  | '(' expr ')'
+  | FORALL quantifiers DO expr END
+  | EXISTS quantifiers DO expr END
+
+actuals:
+    '(' exprlist ')'
+  | '(' ')'
+
+exprlist:
+    exprlist ',' expr
+  | expr
+
+quantifier:
+    ID ':' typeexpr
+
+quantifiers:
+    quantifier ';' quantifiers
+  | quantifier
+
+optstmts:
+    stmts
+  | empty
+
+
+stmts:
+    stmts ';' stmt
+  | stmts ';'
+  | stmt
+
+stmt:
+    assignment
+  | ifstmt
+  | whilestmt
+  | switchstmt
+  | forstmt
+  | proccall
+  | clearstmt
+  | errorstmt
+  | assertstmt
+  | aliasstmt
+  | returnstmt
+  | undefinestmt
+
+assignment:
+    designator ASSIGN expr
+
+ifstmt:
+    IF expr THEN optstmts optelses END
+
+optelses:
+    elsif optelses
+  | optelse
+
+elsif:
+    ELSIF expr THEN optstmts
+
+optelse:
+    ELSE optstmts
+  | empty
+
+whilestmt:
+    WHILE expr DO optstmts END
+
+switchstmt:
+    SWITCH expr optcases optelse END
+
+optcases:
+    optcases case
+  | empty
+
+case:
+    CASE exprlist ':' optstmts
+
+forstmt:
+    FOR quantifiers DO optstmts END
+
+proccall:
+    ID actuals
+
+clearstmt:
+    CLEAR designator
+
+undefinestmt:
+    UNDEFINE designator
+
+errorstmt:
+    ERROR STRING
+
+assertstmt:
+    ASSERT expr optstring
+
+aliasstmt:
+    ALIAS aliases DO optstmts END
+
+aliases:
+    aliases ';' alias
+  | aliases ';'
+  | alias
+
+alias:
+    ID ':' expr
+
+returnstmt:
+    RETURN optretexpr
+
+optretexpr:
+    expr
+  | empty
+
+rules:
+    rule ';' rules
+  | rule ';'
+  | rule
+
+rule:
+    simplerule
+  | aliasrule
+  | ruleset
+  | startstate
+  | invariant
+
+simplerule:
+    RULE optstring optcondition
+    optdecls optstmts END
+
+optcondition:
+    expr LONGARROW
+  | empty
+
+optstring:
+    STRING
+  | empty
+
+aliasrule:
+    ALIAS aliases DO
+    rules END
+
+ruleset:
+    RULESET quantifiers DO
+    rules END
+
+startstate:
+    STARTSTATE optstring
+    optdecls optstmts END
+
+invariant:
+    INVARIANT optstring expr
+
+empty:
