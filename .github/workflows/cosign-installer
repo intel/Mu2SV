@@ -1,2 +1,4 @@
 - name: cosign-installer
   uses: sigstore/cosign-installer@v3.8.1
+  on:
+    workflow_dispatch:
