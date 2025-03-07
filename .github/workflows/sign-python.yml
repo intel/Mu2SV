@@ -6,8 +6,8 @@ on:
       - main
 
 permissions:
-  id-token: write  # ✅ Required for Sigstore keyless signingi
-  contents: write  # ✅ Required to push signature files back to the repo
+  id-token: write  # Required for Sigstore keyless signing
+  contents: write  # Required to push signature files back to the repo
 
 jobs:
   sign:
@@ -24,25 +24,27 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Create Virtual Environment and Install Dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install sigstore
+      - name: Install Sigstore
+        run: pip install sigstore
 
       - name: Sign Python Files with Sigstore
         run: |
-          source venv/bin/activate
-          sigstore sign requirements.txt
-          sigstore sign mu2sv/mu2sv/*.py  # Change this to the main script you want to sign
+          mkdir -p dist  # Ensure the directory exists
+          sigstore sign --output-signature dist/requirements.txt.sig --output-certificate dist/requirements.txt.crt requirements.txt
+          sigstore sign --output-signature dist/main.py.sig --output-certificate dist/main.py.crt src/main.py
+
+      - name: Debug: List Files in Dist Directory
+        run: ls -R dist
 
       - name: Commit and Push Signature Files
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
-          git add *.sig *.crt
-          git commit -m "Add Sigstore signatures for latest commit"
-          git push origin main
+          if ls dist/*.sig &> /dev/null; then
+            git add dist/*.sig dist/*.crt
+            git commit -m "Add Sigstore signatures for latest commit"
+            git push origin main
+          else
+            echo "No signature files found, skipping commit."
+          fi
 
