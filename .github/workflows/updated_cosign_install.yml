@@ -1,0 +1,17 @@
+name: Install Cosign
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install_cosign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.8.1
+
+      - name: Verify Cosign Installation
+        run: cosign version
