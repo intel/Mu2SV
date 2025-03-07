@@ -20,6 +20,12 @@ jobs:
         with:
           python-version: '3.10'
 
+      - permissions:
+        id-token: write  # ✅ Required for Sigstore keyless signing
+        contents: write  # ✅ Required to push signature files back to the repo
+
+
+
       - name: Create Virtual Environment and Install Dependencies
         run: |
           python -m venv venv
