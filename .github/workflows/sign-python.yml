@@ -1,47 +1,43 @@
+---
 name: Sign Python Files and Commit Signatures
-
 on:
   push:
     branches:
       - main
-
 permissions:
-  id-token: write  # Required for Sigstore keyless signing
-  contents: write  # Required to push signature files back to the repo
-
+  id-token: write
+  contents: write
 jobs:
   sign:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
-
+          python-version: "3.10"
       - name: Install Sigstore
         run: pip install sigstore
-
       - name: Sign Python Files with Sigstore
-        run: |
+        run: >
           mkdir -p dist  # Ensure the directory exists
-          
+
+
           # Sign requirements.txt
+
           sigstore sign --output-signature dist/requirements.txt.sig --output-certificate dist/requirements.txt.crt requirements.txt
 
+
           # Loop through each Python file in mu2sv/mu2sv/ and sign it
+
           for file in mu2sv/mu2sv/*.py; do
             sigstore sign --output-signature "dist/$(basename $file).sig" --output-certificate "dist/$(basename $file).crt" "$file"
           done
-
-      - name: Debug: List Signed Files
+      - name: Debug List Signed Files
         run: ls -R dist
-
       - name: Commit and Push Signature Files
         run: |
           git config --global user.name "GitHub Actions"
@@ -53,3 +49,4 @@ jobs:
           else
             echo "No signature files found, skipping commit."
           fi
+
