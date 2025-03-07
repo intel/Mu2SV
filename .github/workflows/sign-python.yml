@@ -33,7 +33,7 @@ jobs:
           sigstore sign --output-signature dist/requirements.txt.sig --output-certificate dist/requirements.txt.crt requirements.txt
           sigstore sign --output-signature dist/main.py.sig --output-certificate dist/main.py.crt src/main.py
 
-      - name: Debug: List Files in Dist Directory
+      - name: Debug List Files in Dist Directory
         run: ls -R dist
 
       - name: Commit and Push Signature Files
