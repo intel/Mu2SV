@@ -30,10 +30,16 @@ jobs:
       - name: Sign Python Files with Sigstore
         run: |
           mkdir -p dist  # Ensure the directory exists
+          
+          # Sign requirements.txt
           sigstore sign --output-signature dist/requirements.txt.sig --output-certificate dist/requirements.txt.crt requirements.txt
-          sigstore sign --output-signature dist/main.py.sig --output-certificate dist/main.py.crt src/main.py
 
-      - name: Debug List Files in Dist Directory
+          # Loop through each Python file in mu2sv/mu2sv/ and sign it
+          for file in mu2sv/mu2sv/*.py; do
+            sigstore sign --output-signature "dist/$(basename $file).sig" --output-certificate "dist/$(basename $file).crt" "$file"
+          done
+
+      - name: Debug: List Signed Files
         run: ls -R dist
 
       - name: Commit and Push Signature Files
@@ -47,4 +53,3 @@ jobs:
           else
             echo "No signature files found, skipping commit."
           fi
-
