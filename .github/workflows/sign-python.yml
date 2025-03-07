@@ -30,6 +30,7 @@ jobs:
 
       - name: Sign Python Files with Sigstore
         run: |
+          source venv/bin/activate
           sigstore sign requirements.txt
           sigstore sign mu2sv/mu2sv/*.py  # Change this to the main script you want to sign
 
